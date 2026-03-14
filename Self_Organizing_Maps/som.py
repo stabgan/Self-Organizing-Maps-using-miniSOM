@@ -1,45 +1,72 @@
 # Self Organizing Map
+# Detects potential fraud in credit card applications using MiniSom.
 
-# Importing the libraries
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
-# Importing the dataset
-dataset = pd.read_csv('Credit_Card_Applications.csv')
-X = dataset.iloc[:, :-1].values
-y = dataset.iloc[:, -1].values
-
-# Feature Scaling
 from sklearn.preprocessing import MinMaxScaler
-sc = MinMaxScaler(feature_range = (0, 1))
-X = sc.fit_transform(X)
 
-# Training the SOM
 from minisom import MiniSom
-som = MiniSom(x = 10, y = 10, input_len = 15, sigma = 1.0, learning_rate = 0.5)
-som.random_weights_init(X)
-som.train_random(data = X, num_iteration = 100)
 
-# Visualizing the results
-from pylab import bone, pcolor, colorbar, plot, show
-bone()
-pcolor(som.distance_map().T)
-colorbar()
-markers = ['o', 's']
-colors = ['r', 'g']
-for i, x in enumerate(X):
-    w = som.winner(x)
-    plot(w[0] + 0.5,
-         w[1] + 0.5,
-         markers[y[i]],
-         markeredgecolor = colors[y[i]],
-         markerfacecolor = 'None',
-         markersize = 10,
-         markeredgewidth = 2)
-show()
 
-# Finding the frauds
-mappings = som.win_map(X)
-frauds = np.concatenate((mappings[(8,1)], mappings[(6,8)]), axis = 0)
-frauds = sc.inverse_transform(frauds)
+def main():
+    # Importing the dataset (resolve path relative to this script)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(script_dir, "Credit_Card_Applications.csv")
+    dataset = pd.read_csv(csv_path)
+    X = dataset.iloc[:, :-1].values
+    y = dataset.iloc[:, -1].values
+
+    # Feature Scaling
+    sc = MinMaxScaler(feature_range=(0, 1))
+    X = sc.fit_transform(X)
+
+    # Training the SOM
+    som = MiniSom(x=10, y=10, input_len=15, sigma=1.0, learning_rate=0.5)
+    som.random_weights_init(X)
+    som.train_random(data=X, num_iteration=100)
+
+    # Visualizing the results
+    plt.figure(figsize=(10, 8))
+    plt.pcolor(som.distance_map().T, cmap="bone")
+    plt.colorbar(label="Mean Inter-Neuron Distance")
+    markers = ["o", "s"]
+    colors = ["r", "g"]
+    for i, x in enumerate(X):
+        w = som.winner(x)
+        plt.plot(
+            w[0] + 0.5,
+            w[1] + 0.5,
+            markers[y[i]],
+            markeredgecolor=colors[y[i]],
+            markerfacecolor="None",
+            markersize=10,
+            markeredgewidth=2,
+        )
+    plt.title("Self-Organizing Map — Credit Card Applications")
+    plt.show()
+
+    # Finding the frauds dynamically
+    # Identify outlier neurons whose mean distance exceeds a threshold
+    distance_map = som.distance_map()
+    threshold = distance_map.mean() + distance_map.std()
+    mappings = som.win_map(X)
+
+    fraud_candidates = []
+    for (i, j), samples in mappings.items():
+        if distance_map[i, j] >= threshold:
+            fraud_candidates.extend(samples)
+
+    if fraud_candidates:
+        frauds = np.array(fraud_candidates)
+        frauds = sc.inverse_transform(frauds)
+        print(f"Detected {len(frauds)} potential fraud application(s):")
+        print(frauds)
+    else:
+        print("No outlier neurons found above the threshold.")
+
+
+if __name__ == "__main__":
+    main()

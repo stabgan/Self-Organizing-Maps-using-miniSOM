@@ -1,12 +1,51 @@
-# Self Organizing Maps 
+# Self-Organizing Maps — Credit Card Fraud Detection
 
+Unsupervised fraud detection on credit card applications using a Self-Organizing Map (SOM) built with [MiniSom](https://github.com/JustGlowing/minisom).
 
-I implemented SOM on a Credit Card info dataset to predict the a customer traits of doing frauds .
+## What It Does
 
+A 10×10 SOM is trained on scaled credit card application features. The distance map highlights outlier neurons — regions where the map's weight vectors differ significantly from their neighbours. Applications mapped to those neurons are flagged as potential fraud.
 
-# https://github.com/JustGlowing/minisom - I implemented the miniSOM model.
+### Methodology
 
-Self Organizing Map(SOM) by Teuvo Kohonen provides a data visualization technique which helps to understand high dimensional data by reducing the dimensions of data to a map. SOM also represents clustering concept by grouping similar data together. Therefore it can be said that SOM reduces data dimensions and displays similarities among data.
-With SOM, clustering is performed by having several units compete for the current object. Once the data have been entered into the system, the newtwork of artificial neurons is trained by providing information about inputs. The weight vector of the unit is closest to the current object becomes the winning or active unit. During the training stage, the values for the input variables are gradually adjusted in an attempt to preserve neighborhood relationships that exist within the input data set. As it gets closer to the input object, the weights of the winning unit are adjusted as well as its neighbors.
+1. Load and min-max scale the 15 application features to [0, 1].
+2. Train a 10×10 SOM for 100 iterations (Gaussian neighbourhood, σ = 1.0, lr = 0.5).
+3. Visualise the U-matrix (mean inter-neuron distance) with approved/rejected markers.
+4. Dynamically identify outlier neurons (distance > mean + 1 std) and extract mapped applications.
 
-Teuvo Kohonen writes "The SOM is a new, effective software tool for the visualization of high-dimensional data. It converts complex, nonlinear statistical relationsihps between high-dimensional data items into simple geometric relationships on a low-dimensional display. As it thereby compresses information while preserving the most important topological and metric relationships of the primary data items on the display, it may also be thought to produce some kind of abstractions."
+## Dataset
+
+`Credit_Card_Applications.csv` — 690 rows, 15 features + 1 approval label. The label is used only for visualisation markers, not for training (unsupervised).
+
+## 🛠 Tech Stack
+
+| Tool | Purpose |
+|------|---------|
+| 🐍 Python 3 | Runtime |
+| 📊 MiniSom | Self-Organizing Map implementation |
+| 🔢 NumPy | Numerical operations |
+| 📈 Matplotlib | Visualisation |
+| 🐼 Pandas | Data loading |
+| ⚙️ scikit-learn | Feature scaling (`MinMaxScaler`) |
+
+## Installation
+
+```bash
+pip install numpy matplotlib pandas scikit-learn
+```
+
+> `minisom.py` is bundled in the repo — no separate install needed.
+
+## Usage
+
+```bash
+cd Self_Organizing_Maps
+python som.py
+```
+
+A colour-mapped SOM visualisation will appear. Detected fraud candidates are printed to the console.
+
+## ⚠️ Known Issues
+
+- The bundled `minisom.py` is a legacy snapshot. For production use, install the latest version via `pip install minisom`.
+- Fraud threshold (mean + 1 std) is a heuristic — tune it for your data.
